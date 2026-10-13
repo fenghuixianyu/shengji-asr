@@ -1,0 +1,29 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio / IDE
+.idea/
+*.iml
+.DS_Store
+captures/
+
+# 本机 SDK 路径，不要提交
+local.properties
+
+# 构建产物
+*.apk
+*.aab
+*.ap_
+*.dex
+outputs/
+
+# 大体积二进制模型与原生库：不入库，克隆后跑 tools/download_models.py 自动下载
+# 说明见 README「大文件与模型下载」。小体积文本资源 (tokens.txt / tokenizer 等) 仍入库。
+app/libs/*.aar
+app/libs/*.jar
+app/src/**/assets/**/*.onnx
+
+# 内部留档：开发与仓库操作记录（含历史细节，勿公开）
+/开发与仓库操作记录.md

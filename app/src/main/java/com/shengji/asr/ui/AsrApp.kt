@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -22,12 +23,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowBack
 import androidx.compose.material.icons.rounded.ContentCopy
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Description
@@ -38,6 +42,7 @@ import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Schedule
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Speed
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material.icons.rounded.Subtitles
@@ -134,6 +139,19 @@ fun AsrApp(vm: AsrViewModel) {
         ActivityResultContracts.CreateDocument("text/plain")
     ) { uri: Uri? -> if (uri != null) writeText(context, uri, vm.exportTimestamped()) }
 
+    var showSettings by remember { mutableStateOf(false) }
+
+    if (showSettings) {
+        BackHandler { showSettings = false }
+        SettingsScreen(
+            state = state,
+            onSelectModel = { vm.selectModel(it) },
+            onSelectLanguage = { vm.selectLanguage(it) },
+            onBack = { showSettings = false },
+        )
+        return
+    }
+
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background,
         snackbarHost = { SnackbarHost(snackbar) },
@@ -157,6 +175,15 @@ fun AsrApp(vm: AsrViewModel) {
                         )
                     }
                 },
+                actions = {
+                    IconButton(onClick = { showSettings = true }) {
+                        Icon(
+                            imageVector = Icons.Rounded.Settings,
+                            contentDescription = "设置",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                },
             )
         },
     ) { padding ->
@@ -168,11 +195,6 @@ fun AsrApp(vm: AsrViewModel) {
             ModelSelector(
                 state = state,
                 onSelect = { vm.selectModel(it) },
-            )
-
-            LanguageSelector(
-                state = state,
-                onSelect = { vm.selectLanguage(it) },
             )
 
             TabRow(
@@ -231,6 +253,88 @@ fun AsrApp(vm: AsrViewModel) {
                     onClear = { vm.clearResult() },
                 )
             }
+        }
+    }
+}
+
+// ------------------------------------------------------------------ 设置页
+
+/**
+ * 设置页: 切换识别语言模式与识别精度档位。
+ *
+ * 主界面保持原来的样子, 只通过右上角齿轮进入这里。
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SettingsScreen(
+    state: AsrUiState,
+    onSelectModel: (AsrModels.ModelSpec) -> Unit,
+    onSelectLanguage: (AsrModels.LanguageMode) -> Unit,
+    onBack: () -> Unit,
+) {
+    Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
+        topBar = {
+            TopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    titleContentColor = MaterialTheme.colorScheme.onBackground,
+                ),
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.Rounded.ArrowBack,
+                            contentDescription = "返回",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                },
+                title = {
+                    Text(
+                        text = "设置",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                },
+            )
+        },
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .verticalScroll(rememberScrollState()),
+        ) {
+            Spacer(Modifier.height(4.dp))
+
+            LanguageSelector(
+                state = state,
+                onSelect = onSelectLanguage,
+            )
+
+            Spacer(Modifier.height(14.dp))
+
+            ModelSelector(
+                state = state,
+                onSelect = onSelectModel,
+            )
+
+            if (state.loading || state.switching) {
+                Spacer(Modifier.height(6.dp))
+                LoadingBanner(text = if (state.switching) "正在切换, 请稍候…" else null)
+            }
+
+            Spacer(Modifier.height(14.dp))
+
+            Text(
+                text = "设置即时生效。正在识别或录音时无法切换, 请先停止当前任务。\n" +
+                    "识别语言与精度都会重建离线识别器: 标准档瞬间完成, 高精度档需重新加载大模型, 会停顿数秒。",
+                modifier = Modifier.padding(horizontal = 16.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+
+            Spacer(Modifier.height(24.dp))
         }
     }
 }

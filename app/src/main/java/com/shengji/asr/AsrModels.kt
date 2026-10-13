@@ -53,6 +53,56 @@ object AsrModels {
     val bundled: List<ModelSpec> =
         if (BuildConfig.FULL_BUILD) listOf(senseVoice2024, funAsrNano) else listOf(senseVoice2024)
 
+    /**
+     * 识别语言模式。
+     *
+     * sherpa-onnx 的 SenseVoice / FunASR-Nano 都支持在构造识别器时指定语种。
+     * languageCode 会透传给 native 侧:
+     *  - "zh" : 强制中文, 短句不会乱判语种, 中文最稳
+     *  - "en" : 强制英文, 英文最稳, 中文会退化
+     *  - ""   : 自动判别 (auto), 中 / 英 / 日 / 韩 / 粤 全支持
+     */
+    data class LanguageMode(
+        val id: String,
+        val displayName: String,
+        val tagline: String,
+        val languageCode: String,
+        val description: String,
+    )
+
+    /** 默认模式: 中文优先 (本 App 主要面向中文场景)。 */
+    val langChinese = LanguageMode(
+        id = "zh",
+        displayName = "中文优先",
+        tagline = "中文优先",
+        languageCode = "zh",
+        description = "强制中文解码: 短句与口音不会乱判语种, 也不会把中文吐成拼音。中英混说时英文单词仍能正常输出。",
+    )
+
+    /** 英文优先: 适合整段英文素材。 */
+    val langEnglish = LanguageMode(
+        id = "en",
+        displayName = "英文优先",
+        tagline = "英文优先",
+        languageCode = "en",
+        description = "强制英文解码: 英文最稳。此时中文会明显退化, 只建议纯英文素材使用。",
+    )
+
+    /** 多语种自动: 恢复模型原生 auto 判别, 覆盖日 / 韩 / 粤等。 */
+    val langAuto = LanguageMode(
+        id = "auto",
+        displayName = "多语种自动",
+        tagline = "多语种自动",
+        languageCode = "",
+        description = "模型自动判别语种, 支持中 / 英 / 日 / 韩 / 粤。语种混杂或非中文素材选它; 短句偶有误判, 可能出拼音。",
+    )
+
+    /** 全部语言模式, 列表顺序即界面顺序。 */
+    val languages: List<LanguageMode> = listOf(langChinese, langEnglish, langAuto)
+
+    /** 默认语言模式 = 中文优先。 */
+    val defaultLanguage: LanguageMode = langChinese
+
     /** 应用标题 (与启动器标签一致, 按发行版区分)。 */
     val appTitle: String = if (BuildConfig.FULL_BUILD) "声迹 Pro" else "声迹"
 

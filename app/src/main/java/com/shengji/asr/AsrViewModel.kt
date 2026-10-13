@@ -25,6 +25,8 @@ data class AsrUiState(
     val modelId: String = AsrModels.default.id,
     val modelName: String = AsrModels.default.tagline,
     val modelSpeed: String = AsrModels.default.speedHint,
+    val languageId: String = AsrModels.defaultLanguage.id,
+    val languageName: String = AsrModels.defaultLanguage.tagline,
     val utterances: List<Utterance> = emptyList(),
     val progress: Float = 0f,
     val busy: Boolean = false,
@@ -56,7 +58,10 @@ class AsrViewModel(app: Application) : AndroidViewModel(app) {
     init {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                engine.load(AsrModels.default.recognizerType)
+                engine.load(
+                    modelType = AsrModels.default.recognizerType,
+                    languageCode = AsrModels.defaultLanguage.languageCode,
+                )
                 engine.loadVad()
                 _state.update { it.copy(loading = false, status = "模型已就绪") }
             } catch (t: Throwable) {
@@ -86,14 +91,64 @@ class AsrViewModel(app: Application) : AndroidViewModel(app) {
                 status = "正在切换模型…",
             )
         }
+        reloadRecognizer(
+            modelType = spec.recognizerType,
+            languageCode = currentLanguage().languageCode,
+            doneMessage = "已切换到 ${spec.tagline}",
+        )
+    }
+
+    // ------------------------------------------------------------ 语言模式
+
+    private fun currentLanguage(): AsrModels.LanguageMode {
+        val id = _state.value.languageId
+        return AsrModels.languages.firstOrNull { it.id == id } ?: AsrModels.defaultLanguage
+    }
+
+    /**
+     * 切换识别语言模式 (中文优先 / 英文优先 / 多语种自动)。
+     *
+     * 语种是构造识别器时写进 native config 的, 所以必须重建识别器 ——
+     * 标准档瞬间完成, 高精度档要重新加载大模型, 会明显卡一下。
+     */
+    fun selectLanguage(mode: AsrModels.LanguageMode) {
+        if (_state.value.languageId == mode.id &&
+            engine.currentLanguage == mode.languageCode
+        ) {
+            return
+        }
+        if (_state.value.busy || _state.value.recording) {
+            _state.update { it.copy(error = "请先停止当前任务再切换语言") }
+            return
+        }
+        val spec = AsrModels.bundled.firstOrNull { it.id == _state.value.modelId }
+            ?: AsrModels.default
+        _state.update {
+            it.copy(
+                switching = true, error = null,
+                languageId = mode.id, languageName = mode.tagline,
+                status = "正在切换到${mode.displayName}…",
+            )
+        }
+        reloadRecognizer(
+            modelType = spec.recognizerType,
+            languageCode = mode.languageCode,
+            doneMessage = "已切换到${mode.displayName}",
+        )
+    }
+
+    /** 重建识别器 (模型档位或语言模式变化时)。 */
+    private fun reloadRecognizer(
+        modelType: Int,
+        languageCode: String,
+        doneMessage: String,
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
-                engine.load(spec.recognizerType)
-                _state.update {
-                    it.copy(switching = false, status = "已切换到 ${spec.tagline}")
-                }
+                engine.load(modelType = modelType, languageCode = languageCode)
+                _state.update { it.copy(switching = false, status = doneMessage) }
             } catch (t: Throwable) {
-                Log.e(AsrEngine.TAG, "switch model failed", t)
+                Log.e(AsrEngine.TAG, "reload recognizer failed", t)
                 _state.update {
                     it.copy(switching = false, error = "切换失败: ${t.message}")
                 }

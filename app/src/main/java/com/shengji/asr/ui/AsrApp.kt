@@ -34,6 +34,7 @@ import androidx.compose.material.icons.rounded.Description
 import androidx.compose.material.icons.rounded.ErrorOutline
 import androidx.compose.material.icons.rounded.FolderOpen
 import androidx.compose.material.icons.rounded.GraphicEq
+import androidx.compose.material.icons.rounded.Language
 import androidx.compose.material.icons.rounded.Mic
 import androidx.compose.material.icons.rounded.Save
 import androidx.compose.material.icons.rounded.Schedule
@@ -150,7 +151,7 @@ fun AsrApp(vm: AsrViewModel) {
                             fontWeight = FontWeight.SemiBold,
                         )
                         Text(
-                            text = "本地离线 · ${state.modelName}",
+                            text = "本地离线 · ${state.modelName} · ${state.languageName}",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -167,6 +168,11 @@ fun AsrApp(vm: AsrViewModel) {
             ModelSelector(
                 state = state,
                 onSelect = { vm.selectModel(it) },
+            )
+
+            LanguageSelector(
+                state = state,
+                onSelect = { vm.selectLanguage(it) },
             )
 
             TabRow(
@@ -189,7 +195,7 @@ fun AsrApp(vm: AsrViewModel) {
             }
 
             if (state.loading || state.switching) {
-                LoadingBanner(text = if (state.switching) "正在切换精度档位, 请稍候…" else null)
+                LoadingBanner(text = if (state.switching) "正在切换档位 / 语言模式, 请稍候…" else null)
             }
 
             Column(
@@ -291,6 +297,70 @@ private fun ModelSelector(
             }
         }
         val current = AsrModels.bundled.firstOrNull { it.id == state.modelId }
+        if (current != null) {
+            Text(
+                text = current.description,
+                modifier = Modifier.padding(top = 2.dp),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+// ------------------------------------------------------------------ 语言模式
+
+@Composable
+private fun LanguageSelector(
+    state: AsrUiState,
+    onSelect: (AsrModels.LanguageMode) -> Unit,
+) {
+    val enabled = !state.busy && !state.recording && !state.loading && !state.switching
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Rounded.Language,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.secondary,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                text = "识别语言",
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "默认中文优先",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            AsrModels.languages.forEach { mode ->
+                val selected = state.languageId == mode.id
+                FilterChip(
+                    selected = selected,
+                    enabled = enabled,
+                    onClick = { onSelect(mode) },
+                    shape = RoundedCornerShape(12.dp),
+                    label = {
+                        Text(
+                            text = mode.displayName,
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    },
+                    colors = FilterChipDefaults.filterChipColors(
+                        selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                    ),
+                )
+            }
+        }
+        val current = AsrModels.languages.firstOrNull { it.id == state.languageId }
         if (current != null) {
             Text(
                 text = current.description,

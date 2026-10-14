@@ -1,0 +1,22 @@
+我下载了一个下来确实能够实时语音转换，但是确实不能导入音频或者视频转文本的，他是不是开源的？有没有办法？是不是可以？找AI把它修改一下，变成可以导入这种话说的话。还有就是你还说建议我直接去找其他软件。你怎么看？有什么建议吗？
+下载链接：https://k2-fsa.github.io/sherpa/onnx/android/apk-cn.html
+
+我先确认一下它的开源协议，再看有没有现成的文件转写方案。
+
+是开源的，协议是 Apache-2.0，代码在 GitHub 的 [k2-fsa/sherpa-onnx](https://github.com/k2-fsa/sherpa-onnx)，Android 示例在 `android` 目录。可以改，但如果你只是想把音频或视频转成文字，我建议先用现成的，不用自己改。
+
+**让 AI 改这个 APK，可行吗？**
+- 思路可行：它本身支持离线识别，需要加的是选文件、把音视频解码成语音数据、交给识别器，再导出文字或字幕。这个我可以帮你写代码。
+- 麻烦在打包：要在电脑上用 Android Studio 编译、配模型、签名，才能得到能装的 APK。我这个环境大概率编译不出来，这一步得你来。
+- 所以更适合愿意折腾的人。你要的只是转文字的话，成本偏高。
+
+**现成方案（官方文档里查到的）**
+- **手机浏览器直接用**：官方的 [生成字幕页面](https://huggingface.co/spaces/k2-fsa/generate-subtitles-for-videos)（[国内镜像](https://hf.qhduan.com/spaces/k2-fsa/generate-subtitles-for-videos)），上传音视频出文字。这是在线服务，文件会上传，不是本地离线。
+- **电脑桌面版**：官方 [从文件识别](https://k2-fsa.github.io/sherpa/onnx/tauri/app/vad-asr-file-cn.html)，支持 Windows、macOS、Linux，离线，音频视频都能转，还能生成字幕。
+- **SmartSub**：[GitHub 项目](https://github.com/buxuku/SmartSub)，桌面软件，基于 sherpa-onnx，离线识别中文，还能翻译和压制字幕。
+
+我的建议是先用现成的。你有电脑的话，用官方桌面版最省事。只有电脑用不了、又必须在手机上离线转文件时，才值得改 APK。
+
+你有电脑吗？有就走桌面版，没有的话先试浏览器版。如果你想改 APK，我可以写改造方案和代码。
+
+Sources: [sherpa-onnx GitHub](https://github.com/k2-fsa/sherpa-onnx)、[Pre-built Tauri Apps](https://k2-fsa.github.io/sherpa/onnx/tauri/pre-built-app.html)

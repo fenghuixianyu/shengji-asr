@@ -236,6 +236,17 @@ $env:ANDROID_HOME = "D:\Android\Sdk"
 .\gradlew.bat assembleStdDebug assembleFullDebug
 ```
 
+> **工程路径含中文时请用 `tools/build.ps1`**：AGP 与 Kotlin 编译器在非 ASCII 路径下有已知问题
+> （AGP 直接报错；即使放行，Kotlin 编译器仍会因 argfile 转义 bug 找不到源文件）。该脚本会在
+> 需要时自动建立一个纯 ASCII 的目录联接（junction）并通过它构建，无需手动改路径：
+>
+> ```powershell
+> powershell -ExecutionPolicy Bypass -File tools\build.ps1 assembleStdDebug
+> powershell -ExecutionPolicy Bypass -File tools\build.ps1 --offline assembleStdDebug
+> ```
+>
+> 工程路径本身是 ASCII 时，直接 `gradlew` 即可，脚本也照常可用。
+
 ### 构建产物可复现性（重要）
 
 从源码构建出的 APK 与官方 Release 资产**功能完全等价**，但 **SHA256 不保证逐字节一致**：
@@ -278,7 +289,10 @@ docs/                                # 变更记录与改造文档（反馈 / �
 ├─ 改造总览与还原.md          # 相对官方示例 APK 的全部改造 + 如何还原
 ├─ 变更记录-中文识别增强.md
 ├─ 变更记录-TXT起止时间.md
-└─ 变更记录-语言模式切换.md
+├─ 变更记录-语言模式切换.md
+├─ 变更记录-设置页.md
+├─ AI建议.txt                # 最初的需求记录（保留备查）
+└─ AsrEngine.kt.orig         # 改动前的原始文件（还原用）
 ```
 
 ---
@@ -371,6 +385,8 @@ assets 下的**目录名与文件名必须保持原样**，因为 sherpa-onnx �
 - [`docs/变更记录-TXT起止时间.md`](docs/变更记录-TXT起止时间.md)
 - [`docs/变更记录-语言模式切换.md`](docs/变更记录-语言模式切换.md)
 - [`docs/变更记录-设置页.md`](docs/变更记录-设置页.md)
+- [`docs/AI建议.txt`](docs/AI建议.txt)（最初的需求记录）
+- [`docs/AsrEngine.kt.orig`](docs/AsrEngine.kt.orig)（改动前的原始文件，还原用）
 
 ### 版本记录
 

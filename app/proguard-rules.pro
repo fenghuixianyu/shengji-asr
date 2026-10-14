@@ -1,3 +1,3 @@
-# SherpaAsrCn ProGuard rules
+# ShengjiAsr ProGuard rules
 -keepattributes *Annotation*
 -keep class androidx.compose.** { *; }

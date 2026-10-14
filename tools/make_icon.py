@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """声迹 App 图标: 从原始方图抠出字形 + 生成自适应图标资源 (+ 可选部署到工程)。
 
-原始图需自备 (仓库不含), 默认放在 assets/icon/source_icon.png, 也可用 --src 指定。
-生成结果写入 assets/icon/<密度>/, 并生成预览图。
+原始图需自备 (仓库不含), 默认放在 <工作区>/assets/icon/source_icon.png, 也可用 --src 指定。
+生成结果写入 <工作区>/assets/icon/<密度>/, 并生成预览图。
+(assets/ 默认在源码工程的上一级, 即交付工作区根; 若工程内自带 assets/ 则优先用工程内的。)
 
     python tools/make_icon.py --src path/to/source.png
     python tools/make_icon.py --src path/to/source.png --deploy   # 同时拷进工程 res/
@@ -15,9 +16,13 @@ import cv2
 import numpy as np
 from PIL import Image, ImageDraw
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-OUT = os.path.join(ROOT, "assets", "icon")
-PROJ_RES = r"D:\AndroidProjects\SherpaAsrCn\app\src\main\res"
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # 源码工程根
+WS = os.path.dirname(ROOT)                                           # 交付工作区根 (含 assets/ output/)
+ASSETS = os.path.join(WS, "assets")
+if not os.path.isdir(ASSETS):                                        # 兼容 assets/ 就在工程内的情况
+    ASSETS = os.path.join(ROOT, "assets")
+OUT = os.path.join(ASSETS, "icon")
+PROJ_RES = os.path.join(ROOT, "app", "src", "main", "res")
 
 # 源图为 1254x1254 蓝色渐变圆角卡片, 卡片内边距 112px (按需调整)
 CARD = (112, 112, 1144, 1142)
@@ -160,7 +165,7 @@ def deploy(out=OUT):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--src", default=os.path.join(OUT, "source_icon.png"),
-                    help="原始方图 (默认 assets/icon/source_icon.png)")
+                    help="原始方图 (默认 <工作区>/assets/icon/source_icon.png)")
     ap.add_argument("--deploy", action="store_true", help="生成后拷进工程 res/mipmap-*/")
     args = ap.parse_args()
     if not os.path.isfile(args.src):

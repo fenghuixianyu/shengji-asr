@@ -4,10 +4,20 @@
 构建完成后运行本脚本, 把已构建的 flavor 产物复制到 output/ 并打印体积 + SHA256。
 标准版 std 是主交付物(必需); 双精度档 full 可选, 未构建时自动跳过。
 """
-import os, shutil, hashlib
+import argparse
+import os
+import shutil
+import hashlib
 
-OUT = r"D:\Project\ASR音频转语音\output"
-PROJ = r"D:\AndroidProjects\SherpaAsrCn"
+# 工程根 = 本脚本所在目录的上一级；输出目录默认取工程同级的 output/（交付工作区），
+# 可用 --out 覆盖。这样工程放在任意路径都能直接用，不写死盘符。
+PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--out", default=os.path.abspath(os.path.join(PROJ, os.pardir, "output")),
+                help="交付产物输出目录 (默认: 工程同级的 output/)")
+args = ap.parse_args()
+OUT = args.out
 
 pairs = [
     (os.path.join(PROJ, r"app\build\outputs\apk\std\debug\app-std-debug.apk"),

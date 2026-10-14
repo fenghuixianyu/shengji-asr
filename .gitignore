@@ -27,3 +27,7 @@ app/src/**/assets/**/*.onnx
 
 # 内部留档：开发与仓库操作记录（含历史细节，勿公开）
 /开发与仓库操作记录.md
+
+# Python 缓存
+__pycache__/
+*.pyc

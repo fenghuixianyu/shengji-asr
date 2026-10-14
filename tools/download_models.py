@@ -25,8 +25,22 @@ HF_MIRRORS = [
 ]
 GH_RELEASE = "https://github.com/k2-fsa/sherpa-onnx/releases/download/{tag}/{name}"
 
+# AAR 是上游 release 产物, 同一版本号内可能被上游重新打包 (体积会微变, 内容等价,
+# 例如 v1.13.8 的 aar 已从 49,738,711 变为 50,129,134 字节), 因此只做"下限"校验,
+# 只用于挡住下载中断的半截文件; 其余模型文件内容固定, 仍做精确字节校验。
+LOOSE_MIN = {"app/libs/sherpa-onnx-1.13.8.aar": 40 * 1024 * 1024}
+
+
+def size_ok(rel, have, size):
+    if have < 0:
+        return False
+    if rel in LOOSE_MIN:
+        return have >= LOOSE_MIN[rel]
+    return have == size
+
 JOBS = [
-    ("sherpa-onnx AAR", "app/libs/sherpa-onnx-1.13.8.aar", 49738711,
+    # size 为上游当前参考值; 实际按 LOOSE_MIN 下限校验
+    ("sherpa-onnx AAR", "app/libs/sherpa-onnx-1.13.8.aar", 50129134,
      [GH_RELEASE.format(tag="v1.13.8", name="sherpa-onnx-1.13.8.aar")]),
 
     ("Silero VAD", "app/src/main/assets/silero_vad.onnx", 643854,
@@ -110,7 +124,7 @@ def main():
     for label, rel, size, urls in jobs:
         dst = os.path.join(ROOT, rel)
         have = os.path.getsize(dst) if os.path.isfile(dst) else -1
-        if have == size:
+        if size_ok(rel, have, size):
             print("[OK]   %-40s %s" % (label, human(size)))
             ok += 1
             continue
@@ -125,14 +139,14 @@ def main():
         for url in urls:
             try:
                 got = download(url, dst)
-                if got == size:
+                if size_ok(rel, got, size):
                     break
                 last = "size mismatch: got %d, want %d" % (got, size)
             except Exception as e:  # noqa: BLE001
                 last = "%s: %s" % (type(e).__name__, e)
                 print("       ! %s" % last)
         final = os.path.getsize(dst) if os.path.isfile(dst) else -1
-        if final == size:
+        if size_ok(rel, final, size):
             print("       -> sha256 %s" % sha256(dst))
             ok += 1
         else:

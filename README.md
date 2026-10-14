@@ -236,6 +236,18 @@ $env:ANDROID_HOME = "D:\Android\Sdk"
 .\gradlew.bat assembleStdDebug assembleFullDebug
 ```
 
+### 构建产物可复现性（重要）
+
+从源码构建出的 APK 与官方 Release 资产**功能完全等价**，但 **SHA256 不保证逐字节一致**：
+
+- Gradle / AGP 打包时会对 zip 条目做对齐（zipalign），不同机器 / 不同工具链版本会产生
+  **不同的条目间 padding**，使 APK 总字节数出现约 1 MB 级差异。
+- 实测（同一 commit、同一套模型）：从零克隆 → 下载模型 → `assembleStdDebug` 构建出的 APK
+  与 Release 资产相比，**全部 157 个 zip 条目的名称 / 大小 / CRC 完全一致**，
+  压缩后总大小也完全一致；差异 100% 来自条目间 padding。
+
+因此校验时请以「**能正常安装并运行**」为准，不必强求 SHA256 与 Release 资产相同。
+
 ---
 
 ## 目录结构
@@ -340,6 +352,11 @@ python tools/download_models.py --check  # 只校验
 
 assets 下的**目录名与文件名必须保持原样**，因为 sherpa-onnx 的
 `getOfflineModelConfig(type)` 里对路径是硬编码的。
+
+> 关于校验强度：`sherpa-onnx-1.13.8.aar` 由上游 release 提供，**同一版本号内上游可能重新打包**
+> （体积会微变、内容等价，例如 v1.13.8 的 AAR 已从 49,738,711 变为 50,129,134 字节），
+> 所以脚本对 AAR 只做「不低于 40 MB」的**下限校验**（挡半截下载），其余模型文件仍做**精确字节校验**。
+> 若日后脚本报 AAR `FAILED`，多半是上游又改了 AAR，核对一下上游 release 即可。
 
 ---
 
